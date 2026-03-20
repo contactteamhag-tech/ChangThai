@@ -5120,7 +5120,7 @@ body.has-quick-cart{padding-bottom:6.4rem;}
 <li><a href="#kontakt" onclick="closeMenu()">Kontakt</a></li>
 <li><a class="nav-phone" href="tel:022129966093" onclick="closeMenu()">☎ 0221 299 660 93</a></li>
 </ul>
-<button aria-label="Menü" class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+<button aria-controls="navLinks" aria-expanded="false" aria-label="Menü öffnen" class="hamburger" id="navToggle" type="button"><span></span><span></span><span></span></button>
 </nav>
 <!-- HERO -->
 <section class="hero" id="home">
@@ -6370,20 +6370,40 @@ body.has-quick-cart{padding-bottom:6.4rem;}
 
     .nav-logo-wrap{
         max-width:calc(100vw - 6.5rem);
+        position:relative;
+        z-index:1001;
     }
 
     .hamburger{
+        display:flex !important;
         position:relative;
         width:48px;
         height:48px;
         min-width:48px;
         min-height:48px;
+        flex:0 0 48px;
+        margin-left:.5rem;
         padding:0;
+        border:0;
         border-radius:14px;
         align-items:center;
         justify-content:center;
+        align-self:center;
+        background:transparent;
+        appearance:none;
+        -webkit-appearance:none;
         -webkit-tap-highlight-color:transparent;
         touch-action:manipulation;
+        cursor:pointer;
+        z-index:1006;
+    }
+
+    body.menu-open .hamburger{
+        position:fixed;
+        top:max(.9rem, env(safe-area-inset-top));
+        right:1rem;
+        background:rgba(255,255,255,.96);
+        box-shadow:0 14px 34px rgba(0,0,0,.16);
     }
 
     .hamburger::before{
@@ -6407,9 +6427,12 @@ body.has-quick-cart{padding-bottom:6.4rem;}
         position:absolute;
         left:50%;
         width:22px;
+        height:2px;
         margin-left:-11px;
         transform-origin:center;
         border-radius:999px;
+        background:var(--gold) !important;
+        transition:transform .28s ease, opacity .2s ease, top .28s ease;
     }
 
     .hamburger span:nth-child(1){ top:15px; }
@@ -6432,6 +6455,7 @@ body.has-quick-cart{padding-bottom:6.4rem;}
     }
 
     .nav-links.nav-links-mobile{
+        position:fixed;
         top:0;
         right:0;
         bottom:0;
@@ -6558,7 +6582,7 @@ body.has-quick-cart{padding-bottom:6.4rem;}
     const media = window.matchMedia('(max-width: 768px)');
     const body = document.body;
     const navLinks = document.getElementById('navLinks');
-    const burger = document.querySelector('.hamburger');
+    const burger = document.getElementById('navToggle') || document.querySelector('.hamburger');
     const navbar = document.getElementById('navbar');
     if(!navLinks || !burger || !navbar){ return; }
 
@@ -6570,10 +6594,6 @@ body.has-quick-cart{padding-bottom:6.4rem;}
         document.body.appendChild(backdrop);
     }
 
-    burger.setAttribute('aria-controls', 'navLinks');
-    burger.setAttribute('aria-expanded', 'false');
-    navLinks.setAttribute('aria-hidden', 'true');
-
     function isMobile(){
         return media.matches;
     }
@@ -6583,16 +6603,24 @@ body.has-quick-cart{padding-bottom:6.4rem;}
         navLinks.classList.toggle('open', shouldOpen);
         body.classList.toggle('menu-open', shouldOpen);
         burger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        burger.setAttribute('aria-label', shouldOpen ? 'Menü schließen' : 'Menü öffnen');
+        burger.setAttribute('title', shouldOpen ? 'Menü schließen' : 'Menü öffnen');
         navLinks.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
     }
 
-    window.toggleMenu = function(){
+    window.toggleMenu = function(event){
+        if(event){
+            event.preventDefault();
+            event.stopPropagation();
+        }
         syncMenuState(!navLinks.classList.contains('open'));
     };
 
     window.closeMenu = function(){
         syncMenuState(false);
     };
+
+    burger.addEventListener('click', window.toggleMenu, {passive:false});
 
     backdrop.addEventListener('click', function(){
         window.closeMenu();
@@ -6610,6 +6638,14 @@ body.has-quick-cart{padding-bottom:6.4rem;}
         }, {passive:true});
     });
 
+    media.addEventListener('change', function(event){
+        if(!event.matches){
+            window.closeMenu();
+        } else {
+            syncMenuState(navLinks.classList.contains('open'));
+        }
+    });
+
     window.addEventListener('resize', function(){
         if(!isMobile()){
             window.closeMenu();
@@ -6620,17 +6656,20 @@ body.has-quick-cart{padding-bottom:6.4rem;}
         setTimeout(function(){
             if(!isMobile()){
                 window.closeMenu();
+            } else {
+                syncMenuState(navLinks.classList.contains('open'));
             }
         }, 120);
     });
 
-    // Close menu when a quick-cart drawer opens and body state changes elsewhere.
     const observer = new MutationObserver(function(){
         if(!isMobile() && navLinks.classList.contains('open')){
             window.closeMenu();
         }
     });
     observer.observe(document.body, {attributes:true, attributeFilter:['class']});
+
+    syncMenuState(false);
 })();
 </script>
 
